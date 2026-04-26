@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Mates — Connect, Learn, Grow</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { display: ['Space Grotesk','sans-serif'], body: ['DM Sans','sans-serif'] },
+      colors: {
+        brand: { 400:'#FB923C', 500:'#F97316', 600:'#EA580C', 700:'#C2410C' },
+        teal: { 400:'#2DD4BF', 500:'#14B8A6', 600:'#0D9488', 700:'#0F766E' },
+        dark: { 900:'#0A0A14', 800:'#0F0F1A', 700:'#1A1A2E', 600:'#252540', 500:'#333355' }
+      }
+    }
+  }
+};
+</script>
+<style>
+:root{--bg:#0A0A14;--bg2:#0F0F1A;--fg:#F0EDE8;--muted:#7A7A99;--accent:#F97316;--teal:#0D9488;--card:rgba(26,26,46,0.7);--border:rgba(255,255,255,0.08);--glow-o:rgba(249,115,22,0.25);--glow-t:rgba(13,148,136,0.25)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden;min-height:100vh}
+h1,h2,h3,h4,h5,h6{font-family:'Space Grotesk',sans-serif}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:#333355;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+#toast-container{position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{padding:14px 20px;border-radius:12px;font-size:14px;font-weight:500;backdrop-filter:blur(20px);border:1px solid var(--border);transform:translateX(120%);animation:toastIn .4s ease forwards;max-width:380px;display:flex;align-items:center;gap:10px;pointer-events:auto}
+.toast.out{animation:toastOut .3s ease forwards}
+.toast-success{background:rgba(13,148,136,.2);border-color:rgba(13,148,136,.4);color:#2DD4BF}
+.toast-error{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4);color:#FCA5A5}
+.toast-info{background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.4);color:#FDBA74}
+@keyframes toastIn{to{transform:translateX(0)}}
+@keyframes toastOut{to{transform:translateX(120%);opacity:0}}
+.fi{width:100%;padding:12px 16px;background:rgba(15,15,26,.8);border:1px solid var(--border);border-radius:10px;color:var(--fg);font-family:'DM Sans',sans-serif;font-size:15px;transition:all .3s;outline:none}
+.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow-o)}
+.fi::placeholder{color:var(--muted)}
+.skill-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:20px;font-size:13px;color:#FDBA74}
+.skill-tag button{cursor:pointer;opacity:.6;transition:opacity .2s;background:none;border:none;color:#FDBA74;font-size:14px}
+.skill-tag button:hover{opacity:1}
+.btn-p{padding:12px 28px;background:linear-gradient(135deg,#F97316,#EA580C);color:#fff;font-weight:600;font-family:'Space Grotesk',sans-serif;border:none;border-radius:10px;cursor:pointer;transition:all .3s;font-size:15px}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 25px var(--glow-o)}.btn-p:active{transform:translateY(0)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{padding:12px 28px;background:transparent;color:var(--fg);font-weight:600;font-family:'Space Grotesk',sans-serif;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .3s;font-size:15px}
+.btn-s:hover{border-color:var(--teal);color:#2DD4BF;background:rgba(13,148,136,.1)}
+.btn-t{padding:12px 28px;background:linear-gradient(135deg,#0D9488,#0F766E);color:#fff;font-weight:600;font-family:'Space Grotesk',sans-serif;border:none;border-radius:10px;cursor:pointer;transition:all .3s;font-size:15px}
+.btn-t:hover{transform:translateY(-2px);box-shadow:0 8px 25px var(--glow-t)}
+.gc{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;transition:all .3s}
+.gc:hover{border-color:rgba(255,255,255,.12)}
+.view-in{animation:viewIn .5s ease forwards}
+@keyframes viewIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.chat-bub{max-width:75%;padding:10px 16px;border-radius:16px;font-size:14px;line-height:1.5;word-wrap:break-word}
+.chat-bub-s{background:linear-gradient(135deg,#F97316,#EA580C);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+.chat-bub-r{background:rgba(255,255,255,.08);color:var(--fg);border-bottom-left-radius:4px}
+.enc-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(13,148,136,.15);border-radius:10px;font-size:11px;color:#2DD4BF}
+.nav-link{padding:8px 16px;border-radius:8px;transition:all .2s;cursor:pointer;font-weight:500;font-size:14px;color:var(--muted);background:none;border:none;font-family:'DM Sans',sans-serif}
+.nav-link:hover,.nav-link.active{color:var(--fg);background:rgba(255,255,255,.05)}
+.nav-link.active{color:var(--accent)}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mesh-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;background:radial-gradient(ellipse at 20% 50%,rgba(249,115,22,.05) 0%,transparent 50%),radial-gradient(ellipse at 80% 50%,rgba(13,148,136,.05) 0%,transparent 50%),var(--bg)}
+.float-icon{position:absolute;opacity:.06;font-size:22px;color:var(--fg);animation:fIcon 7s ease-in-out infinite}
+@keyframes fIcon{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-25px) rotate(8deg)}}
+.online-dot{width:10px;height:10px;border-radius:50%;background:#22C55E;border:2px solid #1A1A2E;position:absolute;bottom:2px;right:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(max-width:768px){.chat-layout{flex-direction:column!important}.chat-side{width:100%!important;max-height:180px;border-right:none!important;border-bottom:1px solid var(--border)!important}}
+</style>
+</head>
+<body>
+<div class="mesh-bg"></div>
+<div id="toast-container"></div>
+<div id="app"></div>
+
+<script>
+/*
+=============================================================================
+  FIRESTORE SECURITY RULES — Copy to Firebase Console → Firestore → Rules
+=============================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /conversations/{convId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
+      allow update: if request.auth != null && request.auth.uid in resource.data.participants;
+      match /messages/{msgId} {
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
+      }
+    }
+  }
+}
+=============================================================================
+*/
+
+// ── Firebase Config (hardcoded for Skill Mates) ──
+const fbConfig = {
+  apiKey: "AIzaSyC44oGmg6wjvRo_Cbo3zVlMGC2BgQ8PnAU",
+  authDomain: "skill-mates.firebaseapp.com",
+  projectId: "skill-mates",
+  storageBucket: "skill-mates.firebasestorage.app",
+  messagingSenderId: "115839981108",
+  appId: "1:115839981108:web:a7b3bbe35d07e037c8dc61"
+};
+
+let db = null, auth = null;
+
+// ── Crypto Module (ECDH P-256 + AES-256-GCM) ──
+const Crypto = {
+  async genKeyPair(){
+    return await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
+  },
+  async exportPub(kp){ return await crypto.subtle.exportKey('jwk',kp.publicKey); },
+  async importPub(jwk){ return await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,[]); },
+  async deriveAES(privKey,pubKey){
+    return await crypto.subtle.deriveKey({name:'ECDH',public:pubKey},privKey,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+  },
+  async encrypt(aesKey,plain){
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,new TextEncoder().encode(plain));
+    return {ct:ab2b64(ct),iv:ab2b64(iv)};
+  },
+  async decrypt(aesKey,ctB64,ivB64){
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b642ab(ivB64)},aesKey,b642ab(ctB64));
+    return new TextDecoder().decode(pt);
+  }
+};
+function ab2b64(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+function b642ab(b64){const s=atob(b64);const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;}
+
+// ── KeyStore (IndexedDB) ──
+const KS={
+  db:null,
+  async init(){
+    return new Promise((res,rej)=>{
+      const r=indexedDB.open('SkillMatesKeys',1);
+      r.onupgradeneeded=e=>e.target.result.createObjectStore('keys');
+      r.onsuccess=e=>{this.db=e.target.result;res();};
+      r.onerror=e=>rej(e);
+    });
+  },
+  async save(uid,kp){
+    const jwk=await crypto.subtle.exportKey('jwk',kp.privateKey);
+    this.db.transaction('keys','readwrite').objectStore('keys').put(jwk,uid);
+  },
+  async load(uid){
+    return new Promise((res,rej)=>{
+      const r=this.db.transaction('keys','readonly').objectStore('keys').get(uid);
+      r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);
+    });
+  },
+  async del(uid){this.db.transaction('keys','readwrite').objectStore('keys').delete(uid);}
+};
+
+// ── App State ──
+const S = {
+  view:'landing', user:null, profile:null, keyPair:null,
+  users:[], convId:null, chatKey:null, chatUnsub:null,
+  usersUnsub:null, presenceInterval:null
+};
+
+// ── Toast System ──
+function toast(msg,type='info'){
+  const c=document.getElementById('toast-container');
+  const icons={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info'};
+  const d=document.createElement('div');
+  d.className=`toast toast-${type}`;
+  d.innerHTML=`<i class="fa-solid ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+  c.appendChild(d);
+  setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),300);},3500);
+}
+
+// ── Utility ──
+function getConvId(a,b){return a<b?a+'_'+b:b+'_'+a;}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// ── Handshake Canvas Animation ──
+let animRAF=null;
+function startHandshake(canvas){
+  const ctx=canvas.getContext('2d');
+  let W,H;function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight;}
+  resize(); window.addEventListener('resize',resize);
+  const t0=performance.now();
+  const CYCLE=12000;
+
+  function drawPerson(x,y,scale,color,walk,armUp,facingRight){
+    ctx.save();
+    ctx.translate(x,y);
+    if(!facingRight)ctx.scale(-1,1);
+    ctx.scale(scale,scale);
+    const bob=Math.sin(walk*2)*3;
+    const leg=Math.sin(walk)*22;
+
+    ctx.fillStyle='rgba(0,0,0,0.12)';
+    ctx.beginPath();ctx.ellipse(0,78,22,6,0,0,Math.PI*2);ctx.fill();
+
+    ctx.strokeStyle='#2D2D4E';ctx.lineWidth=8;ctx.lineCap='round';
+    ctx.save();ctx.translate(-8,38+bob);ctx.rotate(leg*Math.PI/180);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,36);ctx.stroke();
+    ctx.fillStyle='#1A1A2E';ctx.beginPath();ctx.roundRect(-6,31,13,8,3);ctx.fill();ctx.restore();
+    ctx.save();ctx.translate(8,38+bob);ctx.rotate(-leg*Math.PI/180);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,36);ctx.stroke();
+    ctx.fillStyle='#1A1A2E';ctx.beginPath();ctx.roundRect(-6,31,13,8,3);ctx.fill();ctx.restore();
+
+    ctx.fillStyle=darken(color,.65);ctx.beginPath();ctx.roundRect(-24,-6+bob,11,32,5);ctx.fill();
+    ctx.fillStyle=darken(color,.55);ctx.beginPath();ctx.roundRect(-23,8+bob,9,6,2);ctx.fill();
+
+    ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(-19,-16+bob,38,55,12);ctx.fill();
+    ctx.fillStyle=darken(color,.85);ctx.beginPath();ctx.moveTo(-8,-16+bob);ctx.lineTo(0,-8+bob);ctx.lineTo(8,-16+bob);ctx.fill();
+
+    ctx.strokeStyle='#E8B88A';ctx.lineWidth=7;ctx.lineCap='round';
+    const backArmAngle=(-armUp-leg*.4)*Math.PI/180;
+    const frontArmAngle=(armUp+leg*.4)*Math.PI/180;
+    ctx.save();ctx.translate(-17,-4+bob);ctx.rotate(backArmAngle);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,32);ctx.stroke();ctx.restore();
+    ctx.save();ctx.translate(17,-4+bob);ctx.rotate(frontArmAngle);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,32);ctx.stroke();
+    ctx.fillStyle='#E8B88A';ctx.beginPath();ctx.arc(0,34,5.5,0,Math.PI*2);ctx.fill();ctx.restore();
+
+    ctx.fillStyle='#E8B88A';ctx.beginPath();ctx.roundRect(-6,-23+bob,12,10,4);ctx.fill();
+    ctx.fillStyle='#E8B88A';ctx.beginPath();ctx.arc(0,-36+bob,19,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=darken(color,.55);
+    ctx.beginPath();ctx.arc(0,-41+bob,19,Math.PI,0);ctx.fill();
+    ctx.beginPath();ctx.roundRect(-21,-43+bob,42,8,4);ctx.fill();
+    ctx.fillStyle=darken(color,.45);ctx.beginPath();ctx.roundRect(-6,-37+bob,28,5,2);ctx.fill();
+    ctx.fillStyle='#2D2D4E';
+    ctx.beginPath();ctx.arc(-7,-36+bob,2.8,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(7,-36+bob,2.8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(-6,-37+bob,1,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(8,-37+bob,1,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#C4846A';ctx.lineWidth=1.8;
+    ctx.beginPath();ctx.arc(0,-32+bob,7,.15*Math.PI,.85*Math.PI);ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function darken(hex,f){
+    const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
+  }
+
+  let sparkles=[];
+  function addSparkle(x,y){
+    sparkles.push({x,y,vx:(Math.random()-.5)*3,vy:(Math.random()-.5)*3-1,life:1,size:Math.random()*3+1,color:Math.random()>.5?'#F97316':'#2DD4BF'});
+  }
+
+  function frame(now){
+    const elapsed=(now-t0)%CYCLE;
+    const p=elapsed/CYCLE;
+    ctx.clearRect(0,0,W,H);
+
+    const cx=W/2, cy=H/2+20;
+    const startL=-W*0.15, startR=W*1.15;
+    const endL=cx-50, endR=cx+50;
+
+    let lx,ly,rx,ry,walk,armUp,shakeGlow=0;
+
+    if(p<0.3){
+      const t=p/0.3;
+      const ease=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      lx=startL+(endL-startL)*ease;
+      rx=startR+(endR-startR)*ease;
+      ly=cy;ry=cy;walk=t*12;armUp=0;
+    } else if(p<0.38){
+      const t=(p-0.3)/0.08;
+      lx=endL;rx=endR;ly=cy;ry=cy;walk=12*(1-t);armUp=t*20;
+    } else if(p<0.55){
+      const t=(p-0.38)/0.17;
+      lx=endL;rx=endR;ly=cy;ry=cy;walk=0;
+      armUp=20+Math.sin(t*Math.PI*6)*8;
+      shakeGlow=Math.sin(t*Math.PI)*1;
+      if(Math.random()<.3)addSparkle(cx,cy-10);
+    } else if(p<0.92){
+      lx=endL;rx=endR;ly=cy;ry=cy;walk=0;armUp=20;
+      shakeGlow=.6+Math.sin((p-.55)*10)*.4;
+    } else {
+      const t=(p-0.92)/0.08;
+      ctx.globalAlpha=1-t;
+      lx=endL;rx=endR;ly=cy;ry=cy;walk=0;armUp=20;
+    }
+
+    if(shakeGlow>0){
+      const grd=ctx.createRadialGradient(cx,cy-10,0,cx,cy-10,60+shakeGlow*30);
+      grd.addColorStop(0,`rgba(249,115,22,${.15*shakeGlow})`);
+      grd.addColorStop(0.5,`rgba(13,148,136,${.1*shakeGlow})`);
+      grd.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx,cy-10,90,0,Math.PI*2);ctx.fill();
+    }
+
+    sparkles=sparkles.filter(s=>s.life>0);
+    sparkles.forEach(s=>{
+      s.x+=s.vx;s.y+=s.vy;s.life-=.02;s.vy+=.05;
+      ctx.globalAlpha=s.life*(ctx.globalAlpha||1);
+      ctx.fillStyle=s.color;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+
+    const sc=Math.min(W/800,H/500,1.2);
+    drawPerson(lx,ly,sc,'#F97316',walk,armUp,true);
+    drawPerson(rx,ry,sc,'#0D9488',walk,armUp,false);
+
+    animRAF=requestAnimationFrame(frame);
+  }
+  animRAF=requestAnimationFrame(frame);
+}
+function stopHandshake(){if(animRAF){cancelAnimationFrame(animRAF);animRAF=null;}}
+
+// ── Navigation Bar ──
+function navBar(active){
+  if(!S.user)return '';
+  return `
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-dark-900/80 border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="go('dashboard')">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-teal-600 flex items-center justify-center">
+          <i class="fa-solid fa-handshake text-white text-sm"></i>
+        </div>
+        <span class="font-display font-bold text-lg hidden sm:block">Skill Mates</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button class="nav-link ${active==='dashboard'?'active':''}" onclick="go('dashboard')"><i class="fa-solid fa-house mr-1.5"></i><span class="hidden sm:inline">Dashboard</span></button>
+        <button class="nav-link ${active==='explore'?'active':''}" onclick="go('explore')"><i class="fa-solid fa-compass mr-1.5"></i><span class="hidden sm:inline">Explore</span></button>
+        <button class="nav-link ${active==='chat'?'active':''}" onclick="go('chat')"><i class="fa-solid fa-comments mr-1.5"></i><span class="hidden sm:inline">Chat</span></button>
+        <button class="nav-link ${active==='profile'?'active':''}" onclick="go('editprofile')"><i class="fa-solid fa-user mr-1.5"></i><span class="hidden sm:inline">Profile</span></button>
+      </div>
+      <button class="nav-link text-red-400 hover:text-red-300 hover:bg-red-500/10" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket mr-1.5"></i><span class="hidden sm:inline">Logout</span></button>
+    </div>
+  </nav>`;
+}
+
+// ── Views ──
+
+function renderLanding(){
+  S.view='landing';stopHandshake();
+  const app=document.getElementById('app');
+  app.innerHTML=`
+  <div class="relative min-h-screen overflow-hidden">
+    <canvas id="hs-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0"></canvas>
+    ${['fa-code','fa-palette','fa-music','fa-camera','fa-book','fa-calculator','fa-globe','fa-flask','fa-chess','fa-pen-nib','fa-dumbbell','fa-language'].map((ic,i)=>`<i class="fa-solid ${ic} float-icon" style="left:${8+Math.random()*84}%;top:${10+Math.random()*75}%;animation-delay:${i*.6}s;font-size:${18+Math.random()*12}px"></i>`).join('')}
+    <div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 text-center">
+      <h1 class="font-display text-5xl sm:text-7xl font-bold mb-4 leading-tight">
+        Skill <span class="bg-gradient-to-r from-brand-400 to-teal-400 bg-clip-text text-transparent">Mates</span>
+      </h1>
+      <p class="text-lg sm:text-xl mb-8 max-w-lg" style="color:var(--muted)">Connect with peers, discover skills, and grow together through real-time collaboration.</p>
+      <div class="flex gap-4 mb-16">
+        <button class="btn-p text-lg px-8 py-3" onclick="go('register')">Get Started</button>
+        <button class="btn-s text-lg px-8 py-3" onclick="go('login')">Sign In</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full">
+        ${[
+          ['fa-bolt','Real-Time Discovery','Find peers with complementary skills as they join — updates appear instantly.'],
+          ['fa-lock','Encrypted Chat','End-to-end encrypted messaging using ECDH key exchange. Your conversations stay private.'],
+          ['fa-arrows-rotate','Skill Exchange','Connect directly, share knowledge, and build lasting learning partnerships.']
+        ].map(([ic,t,d])=>`
+          <div class="gc p-5 text-left">
+            <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center mb-3"><i class="fa-solid ${ic} text-brand-400"></i></div>
+            <h3 class="font-display font-semibold mb-1">${t}</h3>
+            <p class="text-sm" style="color:var(--muted)">${d}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
+  const c=document.getElementById('hs-canvas');
+  if(c)startHandshake(c);
+}
+
+function renderLogin(){
+  S.view='login';stopHandshake();
+  document.getElementById('app').innerHTML=`
+  <div class="min-h-screen flex items-center justify-center p-4 view-in">
+    <div class="gc p-8 max-w-md w-full">
+      <button class="text-sm mb-6 flex items-center gap-2 hover:text-brand-400 transition" style="color:var(--muted)" onclick="go('landing')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2 class="font-display text-3xl font-bold mb-1">Welcome Back</h2>
+      <p class="mb-6 text-sm" style="color:var(--muted)">Sign in to your Skill Mates account</p>
+      <form id="login-form" class="space-y-4">
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Email</label><input class="fi mt-1" type="email" id="l-email" required placeholder="you@example.com"></div>
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Password</label><input class="fi mt-1" type="password" id="l-pass" required placeholder="Enter your password"></div>
+        <div class="text-right"><button type="button" class="text-sm text-brand-400 hover:text-brand-300" onclick="handleForgot()">Forgot Password?</button></div>
+        <button type="submit" class="btn-p w-full" id="l-btn">Sign In</button>
+      </form>
+      <p class="text-center text-sm mt-6" style="color:var(--muted)">Don't have an account? <button class="text-teal-400 hover:text-teal-300 font-semibold" onclick="go('register')">Register</button></p>
+    </div>
+  </div>`;
+  document.getElementById('login-form').addEventListener('submit',handleLogin);
+}
+
+function renderRegister(){
+  S.view='register';stopHandshake();
+  document.getElementById('app').innerHTML=`
+  <div class="min-h-screen flex items-center justify-center p-4 view-in">
+    <div class="gc p-8 max-w-md w-full">
+      <button class="text-sm mb-6 flex items-center gap-2 hover:text-brand-400 transition" style="color:var(--muted)" onclick="go('landing')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2 class="font-display text-3xl font-bold mb-1">Create Account</h2>
+      <p class="mb-6 text-sm" style="color:var(--muted)">Join Skill Mates and start connecting</p>
+      <form id="reg-form" class="space-y-4">
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Full Name</label><input class="fi mt-1" id="r-name" required placeholder="John Doe"></div>
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Email</label><input class="fi mt-1" type="email" id="r-email" required placeholder="you@example.com"></div>
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Password</label><input class="fi mt-1" type="password" id="r-pass" required minlength="6" placeholder="Min 6 characters"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Age</label><input class="fi mt-1" type="number" id="r-age" required min="13" max="120" placeholder="20"></div>
+          <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Institution</label><input class="fi mt-1" id="r-inst" required placeholder="University"></div>
+        </div>
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Address</label><input class="fi mt-1" id="r-addr" required placeholder="City, Country"></div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Skills <span class="text-brand-400">(press Enter to add)</span></label>
+          <input class="fi mt-1" id="r-skill-input" placeholder="e.g. JavaScript, Design, Guitar...">
+          <div id="r-skills" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <button type="submit" class="btn-p w-full" id="r-btn">Create Account</button>
+      </form>
+      <p class="text-center text-sm mt-6" style="color:var(--muted)">Already have an account? <button class="text-teal-400 hover:text-teal-300 font-semibold" onclick="go('login')">Sign In</button></p>
+    </div>
+  </div>`;
+  const skills=[];
+  const si=document.getElementById('r-skill-input');
+  const sc=document.getElementById('r-skills');
+  si.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===','){
+      e.preventDefault();
+      const v=si.value.replace(',','').trim().toLowerCase();
+      if(v&&!skills.includes(v)){skills.push(v);renderSkillTags();}
+      si.value='';
+    }
+  });
+  window._regSkills=()=>skills;
+  function renderSkillTags(){
+    sc.innerHTML=skills.map((s,i)=>`<span class="skill-tag">${esc(s)}<button type="button" onclick="window._regSkills().splice(${i},1);this.parentElement.remove()">&times;</button></span>`).join('');
+  }
+  document.getElementById('reg-form').addEventListener('submit',handleRegister);
+}
+
+function renderDashboard(){
+  S.view='dashboard';stopHandshake();cleanupListeners();
+  const app=document.getElementById('app');
+  app.innerHTML=`${navBar('dashboard')}
+  <main class="pt-24 pb-12 px-4 max-w-6xl mx-auto view-in">
+    <div class="mb-8">
+      <h1 class="font-display text-3xl sm:text-4xl font-bold mb-2">Welcome back, <span class="bg-gradient-to-r from-brand-400 to-teal-400 bg-clip-text text-transparent">${esc(S.profile?.name||'User')}</span></h1>
+      <p style="color:var(--muted)">Here's what's happening on Skill Mates</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="gc p-5"><div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center"><i class="fa-solid fa-users text-brand-400"></i></div><span class="text-sm" style="color:var(--muted)">Total Users</span></div><div class="font-display text-3xl font-bold" id="stat-users">--</div></div>
+      <div class="gc p-5"><div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-lg bg-teal-600/15 flex items-center justify-center"><i class="fa-solid fa-circle text-teal-400 text-xs"></i></div><span class="text-sm" style="color:var(--muted)">Online Now</span></div><div class="font-display text-3xl font-bold" id="stat-online">--</div></div>
+      <div class="gc p-5"><div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center"><i class="fa-solid fa-star text-brand-400"></i></div><span class="text-sm" style="color:var(--muted)">Your Skills</span></div><div class="font-display text-3xl font-bold" id="stat-skills">${S.profile?.skills?.length||0}</div></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="gc p-6">
+        <h3 class="font-display font-semibold text-lg mb-4"><i class="fa-solid fa-bolt text-brand-400 mr-2"></i>Your Skills</h3>
+        <div id="dash-skills" class="flex flex-wrap gap-2">
+          ${(S.profile?.skills||[]).map(s=>`<span class="skill-tag">${esc(s)}</span>`).join('')||'<p class="text-sm" style="color:var(--muted)">No skills added yet. Edit your profile to add skills.</p>'}
+        </div>
+        <button class="btn-s text-sm mt-4 px-4 py-2" onclick="go('editprofile')"><i class="fa-solid fa-pen mr-1"></i>Edit Profile</button>
+      </div>
+      <div class="gc p-6">
+        <h3 class="font-display font-semibold text-lg mb-4"><i class="fa-solid fa-compass text-teal-400 mr-2"></i>Quick Actions</h3>
+        <div class="space-y-3">
+          <button class="w-full text-left gc p-4 hover:border-brand-500/30 flex items-center gap-4" onclick="go('explore')">
+            <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center shrink-0"><i class="fa-solid fa-magnifying-glass text-brand-400"></i></div>
+            <div><div class="font-semibold text-sm">Explore Skills</div><div class="text-xs" style="color:var(--muted)">Discover what others can teach you</div></div>
+          </button>
+          <button class="w-full text-left gc p-4 hover:border-teal-600/30 flex items-center gap-4" onclick="go('chat')">
+            <div class="w-10 h-10 rounded-lg bg-teal-600/15 flex items-center justify-center shrink-0"><i class="fa-solid fa-comments text-teal-400"></i></div>
+            <div><div class="font-semibold text-sm">Open Chat</div><div class="text-xs" style="color:var(--muted)">Continue your encrypted conversations</div></div>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="gc p-6 mt-6">
+      <h3 class="font-display font-semibold text-lg mb-4"><i class="fa-solid fa-clock-rotate-left text-brand-400 mr-2"></i>Recently Joined</h3>
+      <div id="dash-recent" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="flex items-center justify-center py-8"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>`;
+  db.collection('users').onSnapshot(snap=>{
+    const users=[];
+    snap.forEach(d=>users.push({id:d.id,...d.data()}));
+    const online=users.filter(u=>u.lastSeen&&Date.now()-u.lastSeen<120000).length;
+    document.getElementById('stat-users').textContent=users.length;
+    document.getElementById('stat-online').textContent=online;
+    const recent=users.filter(u=>u.id!==S.user.uid).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,6);
+    const rc=document.getElementById('dash-recent');
+    if(!recent.length){rc.innerHTML='<p class="text-sm col-span-3 text-center py-4" style="color:var(--muted)">No other users yet. Invite friends to join!</p>';return;}
+    rc.innerHTML=recent.map(u=>`
+      <div class="gc p-3 flex items-center gap-3 cursor-pointer hover:border-brand-500/30" onclick="go('profile:${u.id}')">
+        <div class="relative"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">${esc((u.name||'U')[0].toUpperCase())}</div>
+        ${u.lastSeen&&Date.now()-u.lastSeen<120000?'<div class="online-dot"></div>':''}</div>
+        <div class="min-w-0"><div class="font-semibold text-sm truncate">${esc(u.name||'User')}</div><div class="text-xs truncate" style="color:var(--muted)">${(u.skills||[]).slice(0,2).map(s=>esc(s)).join(', ')||'No skills'}</div></div>
+      </div>
+    `).join('');
+  });
+}
+
+function renderExplore(){
+  S.view='explore';stopHandshake();cleanupListeners();
+  const app=document.getElementById('app');
+  app.innerHTML=`${navBar('explore')}
+  <main class="pt-24 pb-12 px-4 max-w-6xl mx-auto view-in">
+    <h1 class="font-display text-3xl font-bold mb-2">Explore Skills</h1>
+    <p class="mb-6" style="color:var(--muted)">Discover peers and their expertise in real time</p>
+    <div class="mb-6 max-w-md"><div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2" style="color:var(--muted)"></i><input class="fi pl-11" id="explore-search" placeholder="Search by name or skill..."></div></div>
+    <div id="explore-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="col-span-full flex items-center justify-center py-16"><div class="spinner"></div></div>
+    </div>
+  </main>`;
+  db.collection('users').onSnapshot(snap=>{
+    const users=[];
+    snap.forEach(d=>{if(d.id!==S.user.uid)users.push({id:d.id,...d.data()});});
+    S.users=users;
+    renderExploreGrid(users);
+  });
+  document.getElementById('explore-search').addEventListener('input',e=>{
+    const q=e.target.value.toLowerCase();
+    const filtered=S.users.filter(u=>
+      (u.name||'').toLowerCase().includes(q)||(u.skills||[]).some(s=>s.toLowerCase().includes(q))
+    );
+    renderExploreGrid(filtered);
+  });
+}
+
+function renderExploreGrid(users){
+  const g=document.getElementById('explore-grid');
+  if(!users.length){g.innerHTML='<p class="col-span-full text-center py-12" style="color:var(--muted)">No users found. Be the first to register and invite others!</p>';return;}
+  g.innerHTML=users.map(u=>{
+    const online=u.lastSeen&&Date.now()-u.lastSeen<120000;
+    return `
+    <div class="gc p-5 cursor-pointer hover:border-brand-500/30 hover:translate-y-[-2px] transition-all" onclick="go('profile:${u.id}')">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="relative"><div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-teal-600 flex items-center justify-center text-white font-bold">${esc((u.name||'U')[0].toUpperCase())}</div>${online?'<div class="online-dot"></div>':''}</div>
+        <div class="min-w-0"><div class="font-semibold truncate">${esc(u.name||'User')}</div><div class="text-xs" style="color:var(--muted)">${esc(u.institution||'')} ${online?'<span class="text-green-400 ml-1">Online</span>':''}</div></div>
+      </div>
+      <div class="flex flex-wrap gap-1.5">${(u.skills||[]).slice(0,4).map(s=>`<span class="skill-tag text-xs">${esc(s)}</span>`).join('')}${(u.skills||[]).length>4?`<span class="text-xs" style="color:var(--muted)">+${u.skills.length-4} more</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderUserProfile(uid){
+  S.view='profile';stopHandshake();cleanupListeners();
+  const app=document.getElementById('app');
+  app.innerHTML=`${navBar('')}
+  <main class="pt-24 pb-12 px-4 max-w-2xl mx-auto view-in">
+    <button class="text-sm mb-6 flex items-center gap-2 hover:text-brand-400 transition" style="color:var(--muted)" onclick="go('explore')"><i class="fa-solid fa-arrow-left"></i> Back to Explore</button>
+    <div id="profile-content" class="flex items-center justify-center py-16"><div class="spinner"></div></div>
+  </main>`;
+  db.collection('users').doc(uid).get().then(doc=>{
+    if(!doc.exists){document.getElementById('profile-content').innerHTML='<p style="color:var(--muted)">User not found.</p>';return;}
+    const u={id:doc.id,...doc.data()};
+    const online=u.lastSeen&&Date.now()-u.lastSeen<120000;
+    document.getElementById('profile-content').innerHTML=`
+    <div class="gc p-6 sm:p-8">
+      <div class="flex items-center gap-4 mb-6">
+        <div class="relative"><div class="w-20 h-20 rounded-full bg-gradient-to-br from-brand-500 to-teal-600 flex items-center justify-center text-white font-bold text-2xl">${esc((u.name||'U')[0].toUpperCase())}</div>${online?'<div class="online-dot" style="width:14px;height:14px;border-width:3px;bottom:2px;right:2px"></div>':''}</div>
+        <div>
+          <h2 class="font-display text-2xl font-bold">${esc(u.name||'User')}</h2>
+          <p class="text-sm" style="color:var(--muted)">${online?'<span class="text-green-400">Online</span>':'Offline'} &middot; ${esc(u.institution||'No institution')}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="gc p-3"><div class="text-xs mb-1" style="color:var(--muted)">Email</div><div class="text-sm font-medium truncate">${esc(u.email||'')}</div></div>
+        <div class="gc p-3"><div class="text-xs mb-1" style="color:var(--muted)">Age</div><div class="text-sm font-medium">${u.age||'--'}</div></div>
+        <div class="gc p-3 col-span-2"><div class="text-xs mb-1" style="color:var(--muted)">Address</div><div class="text-sm font-medium">${esc(u.address||'Not provided')}</div></div>
+      </div>
+      <div class="mb-6">
+        <h3 class="font-display font-semibold mb-3"><i class="fa-solid fa-star text-brand-400 mr-2"></i>Skills</h3>
+        <div class="flex flex-wrap gap-2">${(u.skills||[]).map(s=>`<span class="skill-tag">${esc(s)}</span>`).join('')||'<p class="text-sm" style="color:var(--muted)">No skills listed</p>'}</div>
+      </div>
+      <button class="btn-p w-full" onclick="openChatWith('${u.id}','${esc(u.name||'User')}')"><i class="fa-solid fa-lock mr-2"></i>Start Encrypted Chat</button>
+    </div>`;
+  });
+}
+
+function renderEditProfile(){
+  S.view='editprofile';stopHandshake();cleanupListeners();
+  const p=S.profile||{};
+  const app=document.getElementById('app');
+  app.innerHTML=`${navBar('profile')}
+  <main class="pt-24 pb-12 px-4 max-w-lg mx-auto view-in">
+    <h1 class="font-display text-3xl font-bold mb-6">Edit Profile</h1>
+    <form id="edit-form" class="gc p-6 space-y-4">
+      <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Full Name</label><input class="fi mt-1" id="e-name" required value="${esc(p.name||'')}"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Age</label><input class="fi mt-1" type="number" id="e-age" required min="13" max="120" value="${p.age||''}"></div>
+        <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Institution</label><input class="fi mt-1" id="e-inst" required value="${esc(p.institution||'')}"></div>
+      </div>
+      <div><label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Address</label><input class="fi mt-1" id="e-addr" required value="${esc(p.address||'')}"></div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Skills <span class="text-brand-400">(press Enter to add)</span></label>
+        <input class="fi mt-1" id="e-skill-input" placeholder="Add a skill...">
+        <div id="e-skills" class="flex flex-wrap gap-2 mt-2">${(p.skills||[]).map(s=>`<span class="skill-tag" data-skill="${esc(s)}">${esc(s)}<button type="button" onclick="this.parentElement.remove()">&times;</button></span>`).join('')}</div>
+      </div>
+      <button type="submit" class="btn-p w-full" id="e-btn">Save Changes</button>
+    </form>
+  </main>`;
+  const si=document.getElementById('e-skill-input');
+  si.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===','){
+      e.preventDefault();
+      const v=si.value.replace(',','').trim().toLowerCase();
+      const existing=[...document.getElementById('e-skills').querySelectorAll('.skill-tag')].map(el=>el.dataset.skill);
+      if(v&&!existing.includes(v)){
+        const tag=document.createElement('span');tag.className='skill-tag';tag.dataset.skill=v;
+        tag.innerHTML=`${esc(v)}<button type="button" onclick="this.parentElement.remove()">&times;</button>`;
+        document.getElementById('e-skills').appendChild(tag);
+      }
+      si.value='';
+    }
+  });
+  document.getElementById('edit-form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const btn=document.getElementById('e-btn');btn.disabled=true;btn.textContent='Saving...';
+    const skillsList=[...document.getElementById('e-skills').querySelectorAll('.skill-tag')].map(el=>el.dataset.skill);
+    try{
+      await db.collection('users').doc(S.user.uid).update({
+        name:document.getElementById('e-name').value.trim(),
+        age:parseInt(document.getElementById('e-age').value),
+        institution:document.getElementById('e-inst').value.trim(),
+        address:document.getElementById('e-addr').value.trim(),
+        skills:skillsList
+      });
+      S.profile={...S.profile,name:document.getElementById('e-name').value.trim(),age:parseInt(document.getElementById('e-age').value),institution:document.getElementById('e-inst').value.trim(),address:document.getElementById('e-addr').value.trim(),skills:skillsList};
+      toast('Profile updated!','success');go('dashboard');
+    }catch(err){toast(err.message,'error');btn.disabled=false;btn.textContent='Save Changes';}
+  });
+}
+
+// ── Chat System ──
+async function openChatWith(otherId,otherName){
+  const convId=getConvId(S.user.uid,otherId);
+  const convRef=db.collection('conversations').doc(convId);
+  const convDoc=await convRef.get();
+  if(!convDoc.exists){
+    await convRef.set({
+      participants:[S.user.uid,otherId],
+      participantNames:{[S.user.uid]:S.profile?.name||'User',[otherId]:otherName},
+      lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+  go('chat:'+convId+':'+otherId);
+}
+
+function renderChat(convId,otherId){
+  S.view='chat';stopHandshake();cleanupListeners();
+  const app=document.getElementById('app');
+  app.innerHTML=`${navBar('chat')}
+  <main class="pt-16 h-screen flex chat-layout view-in" style="height:100vh">
+    <div class="chat-side w-80 shrink-0 flex flex-col" style="border-right:1px solid var(--border)">
+      <div class="p-4" style="border-bottom:1px solid var(--border)"><h3 class="font-display font-semibold text-sm">Conversations</h3></div>
+      <div id="conv-list" class="flex-1 overflow-y-auto p-2 space-y-1"><div class="flex items-center justify-center py-8"><div class="spinner" style="width:24px;height:24px;border-width:2px"></div></div></div>
+    </div>
+    <div class="flex-1 flex flex-col min-w-0">
+      <div id="chat-header" class="p-4 flex items-center justify-between shrink-0" style="border-bottom:1px solid var(--border)">
+        <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm" id="chat-avatar">?</div><div><div class="font-semibold text-sm" id="chat-name">Select a conversation</div><div class="enc-badge"><i class="fa-solid fa-lock text-[9px]"></i>End-to-end encrypted</div></div></div>
+      </div>
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
+        <div class="flex-1 flex items-center justify-center"><p class="text-sm" style="color:var(--muted)">Select a conversation to start chatting</p></div>
+      </div>
+      <div id="chat-input-area" class="p-4 shrink-0" style="border-top:1px solid var(--border);display:none">
+        <form id="msg-form" class="flex gap-2">
+          <input class="fi flex-1" id="msg-input" placeholder="Type a message..." autocomplete="off">
+          <button type="submit" class="btn-p px-4"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+      </div>
+    </div>
+  </main>`;
+  loadConversations(convId,otherId);
+}
+
+async function loadConversations(activeConvId, activeOtherId){
+
+  db.collection('conversations')
+    .where('participants','array-contains',S.user.uid)
+    .orderBy('lastMessageTime','desc')
+    .onSnapshot(async snap=>{
+
+      const convs=[];
+      snap.forEach(d=>convs.push({id:d.id,...d.data()}));
+
+      const cl=document.getElementById('conv-list');
+      if(!cl) return;
+
+      let html = '';
+
+      // 🔹 EXISTING CONVERSATIONS
+      if(convs.length){
+        html += convs.map(c=>{
+          const otherUid = c.participants.find(p=>p!==S.user.uid);
+          const otherName = c.participantNames?.[otherUid] || 'User';
+
+          return `
+          <div class="p-3 cursor-pointer hover:bg-white/5"
+               onclick="selectConversation('${c.id}','${otherUid}')">
+
+            <div class="font-semibold text-sm">${otherName}</div>
+            <div class="text-xs">${c.lastMessage || 'No messages'}</div>
+
+          </div>`;
+        }).join('');
+      } else {
+        html += `<p class="text-xs text-center py-4" style="color:gray">No conversations yet</p>`;
+      }
+
+      // 🔥 ALL USERS (WHATSAPP STYLE)
+      const usersSnap = await db.collection('users').get();
+
+      const users=[];
+      usersSnap.forEach(d=>{
+        if(d.id !== S.user.uid){
+          users.push({id:d.id,...d.data()});
+        }
+      });
+
+      if(users.length){
+        html += `<div style="margin-top:10px;font-size:12px;color:gray">All Users</div>`;
+
+        html += users.map(u=>`
+          <div class="p-3 cursor-pointer hover:bg-white/5"
+               onclick="openChatWith('${u.id}','${u.name||'User'}')">
+
+            <div class="font-semibold text-sm">${u.name || 'User'}</div>
+            <div class="text-xs">${(u.skills||[]).join(', ')}</div>
+
+          </div>
+        `).join('');
+      }
+
+      cl.innerHTML = html;
+
+      if(activeConvId){
+        await selectConversation(activeConvId, activeOtherId);
+      }
+  });
+}
+
+async function selectConversation(convId,otherId){
+  S.convId=convId;
+  try{
+    const cd=await db.collection('conversations').doc(convId).get();
+    if(cd.exists){
+      const d=cd.data();
+      const oname=d.participantNames?.[otherId]||'User';
+      const cn=document.getElementById('chat-name');if(cn)cn.textContent=oname;
+      const ca=document.getElementById('chat-avatar');if(ca)ca.textContent=(oname[0]||'U').toUpperCase();
+    }
+  }catch(e){}
+  const cia=document.getElementById('chat-input-area');if(cia)cia.style.display='block';
+
+  try{
+    const otherDoc=await db.collection('users').doc(otherId).get();
+    if(!otherDoc.exists){toast('User not found','error');return;}
+    const otherPubJwk=otherDoc.data().publicKey;
+    if(!otherPubJwk){toast('Cannot establish encryption: user has no public key','error');return;}
+    const otherPubKey=await Crypto.importPub(otherPubJwk);
+    S.chatKey=await Crypto.deriveAES(S.keyPair.privateKey,otherPubKey);
+  }catch(e){toast('Encryption setup failed: '+e.message,'error');return;}
+
+  if(S.chatUnsub)S.chatUnsub();
+  const msgDiv=document.getElementById('chat-messages');
+  if(msgDiv)msgDiv.innerHTML='';
+  S.chatUnsub=db.collection('conversations').doc(convId).collection('messages').orderBy('timestamp','asc').onSnapshot(async snap=>{
+    if(!msgDiv)return;
+    const wasAtBottom=msgDiv.scrollHeight-msgDiv.scrollTop-msgDiv.clientHeight<60;
+    msgDiv.innerHTML='';
+    let lastDate='';
+    snap.forEach(async d=>{
+      const m=d.data();
+      const ts=m.timestamp?.toMillis?.()||m.timestamp||Date.now();
+      const date=new Date(ts).toLocaleDateString();
+      if(date!==lastDate){lastDate=date;msgDiv.innerHTML+=`<div class="text-center text-xs py-2" style="color:var(--muted)">${date}</div>`;}
+      const isMine=m.senderId===S.user.uid;
+      let text='[Failed to decrypt]';
+      try{text=await Crypto.decrypt(S.chatKey,m.ciphertext,m.iv);}catch(e){text='[Decryption error]';}
+      msgDiv.innerHTML+=`<div class="flex ${isMine?'justify-end':'justify-start'}"><div class="chat-bub ${isMine?'chat-bub-s':'chat-bub-r'}">${esc(text)}<div class="text-[10px] mt-1 ${isMine?'text-white/60':''}" style="${isMine?'':'color:var(--muted)'}">${new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
+    });
+    if(wasAtBottom)msgDiv.scrollTop=msgDiv.scrollHeight;
+    if(snap.empty)msgDiv.innerHTML='<div class="flex-1 flex items-center justify-center"><p class="text-sm" style="color:var(--muted)">No messages yet. Say hello!</p></div>';
+  });
+
+  const form=document.getElementById('msg-form');
+  if(!form||form._bound)return;form._bound=true;
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const inp=document.getElementById('msg-input');
+    const text=inp.value.trim();
+    if(!text||!S.chatKey)return;
+    inp.value='';
+    try{
+      const {ct,iv}=await Crypto.encrypt(S.chatKey,text);
+      await db.collection('conversations').doc(convId).collection('messages').add({
+        senderId:S.user.uid,ciphertext:ct,iv:iv,
+        timestamp:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection('conversations').doc(convId).update({
+        lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }catch(err){toast('Send failed: '+err.message,'error');}
+  });
+}
+
+
+// ── Firebase Handlers ──
+async function handleRegister(e){
+  e.preventDefault();
+  const btn=document.getElementById('r-btn');btn.disabled=true;btn.textContent='Creating...';
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const age=parseInt(document.getElementById('r-age').value);
+  const inst=document.getElementById('r-inst').value.trim();
+  const addr=document.getElementById('r-addr').value.trim();
+  const skills=window._regSkills();
+  if(!name||!email||!pass||!age||!inst||!addr){toast('All fields are required','error');btn.disabled=false;btn.textContent='Create Account';return;}
+  if(skills.length===0){toast('Add at least one skill','error');btn.disabled=false;btn.textContent='Create Account';return;}
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    await cred.user.updateProfile({displayName:name});
+    const kp=await Crypto.genKeyPair();
+    const pubJwk=await Crypto.exportPub(kp);
+    await db.collection('users').doc(cred.user.uid).set({
+      name,email,age,institution:inst,address:addr,skills,
+      publicKey:pubJwk,lastSeen:Date.now(),createdAt:Date.now()
+    });
+    await KS.save(cred.user.uid,kp);
+    S.keyPair=kp;
+    toast('Account created successfully!','success');
+  }catch(err){toast(err.message,'error');btn.disabled=false;btn.textContent='Create Account';}
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const btn=document.getElementById('l-btn');btn.disabled=true;btn.textContent='Signing in...';
+  try{
+    await auth.signInWithEmailAndPassword(document.getElementById('l-email').value.trim(),document.getElementById('l-pass').value);
+  }catch(err){toast(err.message,'error');btn.disabled=false;btn.textContent='Sign In';}
+}
+
+async function handleForgot(){
+  const email=document.getElementById('l-email')?.value?.trim();
+  if(!email){toast('Enter your email first','error');return;}
+  try{await auth.sendPasswordResetEmail(email);toast('Password reset email sent!','success');}catch(err){toast(err.message,'error');}
+}
+
+async function handleLogout(){
+  cleanupListeners();
+  if(S.presenceInterval)clearInterval(S.presenceInterval);
+  try{
+    if(S.user)await db.collection('users').doc(S.user.uid).update({lastSeen:Date.now()});
+    await auth.signOut();
+  }catch(e){}
+  S.user=null;S.profile=null;S.keyPair=null;
+  go('landing');
+}
+
+function cleanupListeners(){
+  if(S.chatUnsub){S.chatUnsub();S.chatUnsub=null;}
+  if(S.usersUnsub){S.usersUnsub();S.usersUnsub=null;}
+}
+
+// ── Router ──
+function go(route){
+  if(S.chatUnsub){S.chatUnsub();S.chatUnsub=null;}
+  stopHandshake();
+  if(!S.user && !['landing','login','register'].includes(route.split(':')[0])){go('landing');return;}
+  const [view,...params]=route.split(':');
+  switch(view){
+    case 'landing':renderLanding();break;
+    case 'login':renderLogin();break;
+    case 'register':renderRegister();break;
+    case 'dashboard':renderDashboard();break;
+    case 'explore':renderExplore();break;
+    case 'profile':renderUserProfile(params[0]);break;
+    case 'editprofile':renderEditProfile();break;
+    case 'chat':
+      if(params[0]&&params[1])renderChat(params[0],params[1]);
+      else renderChatList();
+      break;
+    default:go('landing');
+  }
+}
+
+// ── Presence System ──
+function startPresence(){
+  if(S.presenceInterval)clearInterval(S.presenceInterval);
+  S.presenceInterval=setInterval(async()=>{
+    if(S.user)try{await db.collection('users').doc(S.user.uid).update({lastSeen:Date.now()});}catch(e){}
+  },30000);
+  document.addEventListener('visibilitychange',async()=>{
+    if(S.user&&document.visibilityState==='visible')try{await db.collection('users').doc(S.user.uid).update({lastSeen:Date.now()});}catch(e){}
+  });
+  window.addEventListener('beforeunload',()=>{
+    if(S.user)try{db.collection('users').doc(S.user.uid).update({lastSeen:Date.now()});}catch(e){}
+  });
+}
+
+// ── Initialization ──
+async function init(){
+  if(!crypto||!crypto.subtle){
+    document.getElementById('app').innerHTML='<div class="min-h-screen flex items-center justify-center p-4"><div class="gc p-8 text-center max-w-md"><i class="fa-solid fa-triangle-exclamation text-4xl text-brand-400 mb-4"></i><h2 class="font-display text-2xl font-bold mb-2">Secure Context Required</h2><p style="color:var(--muted)">This app uses the Web Crypto API for end-to-end encryption. Please access it via HTTPS or localhost.</p></div></div>';
+    return;
+  }
+
+  try{await KS.init();}catch(e){console.warn('IndexedDB unavailable, keys will be session-only');}
+
+  // Initialize Firebase with hardcoded config
+  try{
+    firebase.initializeApp(fbConfig);
+    db=firebase.firestore();
+    auth=firebase.auth();
+  }catch(e){
+    toast('Firebase init failed: '+e.message,'error');
+    return;
+  }
+
+  auth.onAuthStateChanged(async user=>{
+    if(user){
+      S.user=user;
+      try{
+        const doc=await db.collection('users').doc(user.uid).get();
+        if(doc.exists){
+          S.profile=doc.data();
+          let savedPriv=await KS.load(user.uid);
+          if(savedPriv){
+            const privKey=await crypto.subtle.importKey('jwk',savedPriv,{name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
+            const pubKey=await crypto.subtle.importKey('jwk',S.profile.publicKey,{name:'ECDH',namedCurve:'P-256'},true,[]);
+            S.keyPair={privateKey:privKey,publicKey:pubKey};
+          }else{
+            const kp=await Crypto.genKeyPair();
+            const pubJwk=await Crypto.exportPub(kp);
+            await db.collection('users').doc(user.uid).update({publicKey:pubJwk});
+            await KS.save(user.uid,kp);
+            S.keyPair=kp;
+          }
+          await db.collection('users').doc(user.uid).update({lastSeen:Date.now()});
+          startPresence();
+          go('dashboard');
+        }else{
+          await auth.signOut();
+          go('landing');
+        }
+      }catch(err){
+        console.error(err);
+        toast('Failed to load profile: '+err.message,'error');
+        go('landing');
+      }
+    }else{
+      S.user=null;S.profile=null;S.keyPair=null;
+      cleanupListeners();
+      if(S.presenceInterval)clearInterval(S.presenceInterval);
+      go('landing');
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
